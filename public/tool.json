@@ -1,0 +1,7 @@
+{
+  "name": "PDF Merge",
+  "icon": "Mg",
+  "desc": "Combine PDFs into one file, and compress or sharpen the result. Works on scanned and digital PDFs.",
+  "status": "live",
+  "order": 100
+}
