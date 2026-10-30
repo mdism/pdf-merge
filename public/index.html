@@ -6,10 +6,10 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PDF Merge — Ismail Shaikh</title>
-<meta name="description" content="Combine PDFs into one file, and compress or sharpen the result. Works on scanned and digital PDFs.">
+<meta name="description" content="Combine PDFs into one file, and compress or enhance the result. Scanned or digital.">
 <link rel="canonical" href="https://tools.shaikhismail.com/pdf-merge/">
 <meta property="og:title" content="PDF Merge — free, private, in your browser">
-<meta property="og:description" content="Combine PDFs into one file, and compress or sharpen the result. Works on scanned and digital PDFs.">
+<meta property="og:description" content="Combine PDFs into one file, and compress or enhance the result. Scanned or digital.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23155E3B'/><text x='50' y='68' font-size='58' text-anchor='middle' fill='%23F5821F' font-family='monospace' font-weight='bold'>i</text></svg>">
 <link rel="stylesheet" href="assets/css/tool.css?v=1.0.0">
 </head>
@@ -27,23 +27,75 @@
 <main>
   <div class="wrap stack">
     <div>
-      <div class="prompt" aria-hidden="true"><span class="u">guest</span>@<span class="d">tools</span>:~$ pdf-merge</div>
+      <div class="prompt" aria-hidden="true"><span class="u">guest</span>@<span class="d">tools</span>:~$ merge a.pdf scan.pdf --compress</div>
       <h1>PDF Merge</h1>
-      <p class="lead">Combine PDFs into one file, and compress or sharpen the result. Works on scanned and digital PDFs.</p>
+      <p class="lead">Combine several PDFs into one file, in the order you choose. Compress the result to send by email or WhatsApp, or clean up faint scans. Works on scanned and digital PDFs, and your files never leave your device.</p>
       <div class="notice" role="note"><span class="ico" aria-hidden="true">✓</span><div><strong>We save nothing.</strong> Your PDFs are processed on your device and never uploaded. Anything held while processing is temporary and is deleted as soon as it is done, or when you close the tab.<p>No sign-up, no analytics, no ads. <a href="privacy.html">Privacy policy</a></p></div></div>
     </div>
 
     <div class="gate" id="gate"><span class="gate-title">Quick check to keep bots out</span><div class="gate-widget"></div><span class="gate-state" role="status" aria-live="polite">Loading the check…</span></div>
 
     <div data-gated class="stack">
-      <div class="card stack">
-        <!-- Build the tool here. Everything inside data-gated stays locked until the bot check passes. -->
-        <label class="drop" id="drop">
-          <input type="file">
-          <strong>Drop a file here or tap to choose</strong>
-          <span class="muted">It stays on your device</span>
-        </label>
-        <p class="muted" id="out" role="status"></p>
+      <label class="drop" id="drop">
+        <input type="file" accept="application/pdf,.pdf" multiple>
+        <strong>Drop PDFs here or tap to choose</strong>
+        <span class="muted">Add two or more, scanned or digital (up to 50 files, 150 MB each). Reorder them before merging.</span>
+      </label>
+
+      <div class="card stack" id="card" hidden>
+        <ul class="list" id="list"></ul>
+        <div class="muted" id="info" style="font-size:12px"></div>
+
+        <div class="opts stack" id="opts">
+          <div>
+            <span class="f">Output quality</span>
+            <div class="seg" role="group" aria-label="Output quality" data-opt="mode">
+              <button type="button" data-v="original" aria-pressed="true">Keep original</button>
+              <button type="button" data-v="compress" aria-pressed="false">Compress</button>
+              <button type="button" data-v="enhance" aria-pressed="false">Enhance</button>
+            </div>
+            <p class="muted hint" style="font-size:12px;margin:6px 0 0"></p>
+          </div>
+          <div data-show="compress" hidden>
+            <span class="f">Strength</span>
+            <div class="seg" role="group" aria-label="Compression strength" data-opt="level">
+              <button type="button" data-v="light" aria-pressed="false">Light</button>
+              <button type="button" data-v="balanced" aria-pressed="true">Balanced</button>
+              <button type="button" data-v="strong" aria-pressed="false">Strong</button>
+            </div>
+          </div>
+          <div data-show="enhance" hidden>
+            <span class="f">Sharpness</span>
+            <div class="seg" role="group" aria-label="Enhance sharpness" data-opt="enhance">
+              <button type="button" data-v="standard" aria-pressed="true">Standard</button>
+              <button type="button" data-v="high" aria-pressed="false">Maximum (300 dpi)</button>
+            </div>
+          </div>
+          <div class="row" data-show="changed" hidden>
+            <div>
+              <label class="f" for="optColor">Colour</label>
+              <select id="optColor" data-opt="color">
+                <option value="color">Keep colour</option>
+                <option value="gray">Greyscale (smaller)</option>
+                <option value="bw">Black &amp; white (smallest, for text)</option>
+              </select>
+            </div>
+            <div>
+              <label class="f" for="optType">Page type</label>
+              <select id="optType" data-opt="pageType">
+                <option value="auto">Detect each page</option>
+                <option value="scanned">Treat all as scanned</option>
+                <option value="digital">Treat all as digital</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="go" type="button" disabled>Merge &amp; download</button>
+          <button class="btn" id="clear" type="button">Clear</button>
+        </div>
+        <p class="muted" id="status" role="status" aria-live="polite" hidden></p>
+        <p class="err" id="err" hidden></p>
       </div>
     </div>
   </div>
@@ -57,6 +109,9 @@
 </footer>
 
 <script src="assets/js/common.js?v=1.0.0"></script>
+<script src="assets/vendor/pdf-lib.min.js"></script>
+<script src="assets/vendor/fflate.min.js"></script>
+<script src="assets/js/pdf-engine.js?v=1.0.0"></script>
 <script src="assets/js/app.js?v=1.0.0"></script>
 </body>
 </html>
